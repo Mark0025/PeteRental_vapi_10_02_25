@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  peterental-vapi:
+    build: .
+    container_name: peterental-vapi-prod
+    ports:
+      - '8000:8000'
+    environment:
+      - PORT=8000
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - ./rental_data.json:/app/rental_data.json
+    networks:
+      - peterental-network
+
+networks:
+  peterental-network:
+    driver: bridge

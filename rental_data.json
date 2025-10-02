@@ -1,0 +1,72 @@
+{
+  "last_updated": "2025-08-25T16:32:36.798625",
+  "rentals": {
+    "nolenpropertiesllc.managebuilding.com_1": {
+      "id": "nolenpropertiesllc.managebuilding.com_1",
+      "website": "nolenpropertiesllc.managebuilding.com",
+      "source_url": "https://nolenpropertiesllc.managebuilding.com",
+      "scraped_at": "2025-08-25T16:32:36.794763",
+      "data": {
+        "address": "1000 Rambling Oaks - 6, Norman, OK 73072",
+        "price": "$975",
+        "bedrooms": 2,
+        "bathrooms": 2,
+        "square_feet": "756 sqft",
+        "available_date": "July 15",
+        "property_type": "condo"
+      }
+    },
+    "nolenpropertiesllc.managebuilding.com_2": {
+      "id": "nolenpropertiesllc.managebuilding.com_2",
+      "website": "nolenpropertiesllc.managebuilding.com",
+      "source_url": "https://nolenpropertiesllc.managebuilding.com",
+      "scraped_at": "2025-08-25T16:32:36.795745",
+      "data": {
+        "address": "4420 Southeast 40th Street, Del City, OK 73115",
+        "price": "$1,400",
+        "bedrooms": 3,
+        "bathrooms": 2,
+        "square_feet": "1086 sqft",
+        "available_date": "August 4",
+        "property_type": "house"
+      }
+    },
+    "nolenpropertiesllc.managebuilding.com_3": {
+      "id": "nolenpropertiesllc.managebuilding.com_3",
+      "website": "nolenpropertiesllc.managebuilding.com",
+      "source_url": "https://nolenpropertiesllc.managebuilding.com",
+      "scraped_at": "2025-08-25T16:32:36.796362",
+      "data": {
+        "address": "1000 Rambling Oaks - 12, Norman, OK 73072",
+        "price": "$925",
+        "bedrooms": 2,
+        "bathrooms": 2,
+        "square_feet": "756 sqft",
+        "available_date": "August 6",
+        "property_type": "apartment"
+      }
+    },
+    "nolenpropertiesllc.managebuilding.com_4": {
+      "id": "nolenpropertiesllc.managebuilding.com_4",
+      "website": "nolenpropertiesllc.managebuilding.com",
+      "source_url": "https://nolenpropertiesllc.managebuilding.com",
+      "scraped_at": "2025-08-25T16:32:36.797441",
+      "data": {
+        "address": "13910 Crossing Way East - 1, Edmond, OK 73013",
+        "price": "$1,375",
+        "bedrooms": 2,
+        "bathrooms": 2,
+        "square_feet": "880 sqft",
+        "available_date": "August 6",
+        "property_type": "condo"
+      }
+    }
+  },
+  "websites": {
+    "nolenpropertiesllc.managebuilding.com": {
+      "url": "https://nolenpropertiesllc.managebuilding.com",
+      "last_scraped": "2025-08-25T16:32:36.797450",
+      "rental_count": 4
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "functions": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_availability",
+        "description": "Check available viewing times for a property from the property manager's calendar. Returns available time slots for the next 7 days during business hours (9 AM - 5 PM).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "user_id": {
+              "type": "string",
+              "description": "Property manager user ID",
+              "default": "pete_admin"
+            },
+            "property_address": {
+              "type": "string",
+              "description": "Full address of the property the caller is interested in"
+            }
+          },
+          "required": ["property_address"]
+        }
+      },
+      "server": {
+        "url": "https://peterentalvapi-latest.onrender.com/vapi/webhook",
+        "timeoutSeconds": 20
+      },
+      "messages": [
+        {
+          "type": "request-start",
+          "content": "Let me check the available viewing times for that property..."
+        },
+        {
+          "type": "request-complete",
+          "content": "{{output.result.response}}"
+        },
+        {
+          "type": "request-failed",
+          "content": "I'm having trouble checking availability right now. Can I help you with something else?"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "set_appointment",
+        "description": "Book a property viewing appointment in the property manager's calendar. Creates a calendar event with the viewing details and sends confirmation.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "user_id": {
+              "type": "string",
+              "description": "Property manager user ID",
+              "default": "pete_admin"
+            },
+            "property_address": {
+              "type": "string",
+              "description": "Full address of the property"
+            },
+            "start_time": {
+              "type": "string",
+              "description": "Appointment start time in ISO 8601 format (e.g., 2025-10-02T14:00:00Z)"
+            },
+            "attendee_name": {
+              "type": "string",
+              "description": "Name of the person viewing the property"
+            },
+            "attendee_email": {
+              "type": "string",
+              "description": "Email address of the person viewing the property (optional)"
+            }
+          },
+          "required": ["property_address", "start_time", "attendee_name"]
+        }
+      },
+      "server": {
+        "url": "https://peterentalvapi-latest.onrender.com/vapi/webhook",
+        "timeoutSeconds": 20
+      },
+      "messages": [
+        {
+          "type": "request-start",
+          "content": "Let me book that appointment for you..."
+        },
+        {
+          "type": "request-complete",
+          "content": "{{output.result.response}}"
+        },
+        {
+          "type": "request-failed",
+          "content": "I couldn't complete the booking right now. Would you like me to take your information and have someone call you back?"
+        }
+      ]
+    }
+  ]
+}

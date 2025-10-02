@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: peterental-vapi
+    plan: starter
+    image:
+      url: docker.io/mark0025/peterentalvapi:latest
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: PORT
+        value: 8000
+    healthCheckPath: /health
+    autoDeploy: true
