@@ -349,13 +349,13 @@ async def calendar_auth_callback(code: str, state: str):
         token_manager.store_token(user_id, token_data)
 
         # Redirect to frontend Users page with success
-        frontend_url = os.getenv("FRONTEND_URL", "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app")
+        frontend_url = os.getenv("FRONTEND_URL", "https://peterental-nextjs.vercel.app")
         return RedirectResponse(url=f"{frontend_url}/users?auth=success&email={user_id}")
     except Exception as e:
         from loguru import logger
         logger.error(f"OAuth callback error: {e}")
         # Redirect to frontend with error
-        frontend_url = os.getenv("FRONTEND_URL", "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app")
+        frontend_url = os.getenv("FRONTEND_URL", "https://peterental-nextjs.vercel.app")
         return RedirectResponse(url=f"{frontend_url}/users?auth=error&message={str(e)}")
 
 @app.get("/calendar/auth/status")
