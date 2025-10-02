@@ -1,297 +1,157 @@
-# PeteRental VAPI - Architecture Documentation
+# PeteRental VAPI - Full Architecture Analysis
 
-## 🏗️ System Overview
+## Current Architecture Diagram
 
-The PeteRental VAPI system is a simple **database lookup tool** designed to provide instant rental property information to VAPI voice calls. It should prioritize cached database responses over live scraping for optimal performance.
-
-## 🎯 Core Functionality
-
-**Primary Goal**: Return rental property data from database cache in <1 second
-**Fallback**: Live scrape if database is empty or extremely stale
-
-## 📁 Codebase Structure
-
-```
-peterental_vapi/
-├── main.py                    # FastAPI app with database-first webhook
-├── rental_database.py         # JSON-based database operations
-├── rental_data.json          # Cached rental properties (4 entries)
-├── langchain_rental_scraper.py # LangChain + OpenRouter scraper (fallback)
-├── playwright_scraper.py     # Browser automation scraper (fallback)
-├── Dockerfile                # Multi-stage container build
-├── render.yaml               # Render deployment config
-├── pyproject.toml            # uv dependencies
-├── uv.lock                   # Locked dependency versions
-└── DEV_MAN/                  # Documentation and planning
-    ├── system_overview.md    # Existing system docs
-    └── ARCHITECTURE.md       # This document
-```
-
-## 🔄 Request Flow Architecture
-
-### Expected Flow (Database-First)
 ```mermaid
-graph TD
-    A[VAPI Call] --> B[POST /vapi/webhook]
-    B --> C{Extract website from payload}
-    C --> D{Check rental_data.json}
-    D -->|Found + Recent| E[Return cached data <1s]
-    D -->|Empty/Stale| F[Live scrape + update DB]
-    F --> G[Return scraped data + cache]
-    E --> H[VAPI Voice Response]
-    G --> H
+graph TB
+    subgraph "End Users"
+        A[Voice User via VAPI]
+        B[Browser User]
+    end
+
+    subgraph "Frontend - Vercel"
+        C[Next.js 15 App]
+        C1[Home Page]
+        C2[Calendar Page]
+        C3[VAPI Testing Page]
+        C4[Users Page]
+        C --> C1
+        C --> C2
+        C --> C3
+        C --> C4
+    end
+
+    subgraph "Backend - Render.com"
+        D[FastAPI Python Server]
+        D1[VAPI Webhook Handler]
+        D2[Calendar Endpoints]
+        D3[Rental Database]
+        D4[LangChain Scraper]
+        D --> D1
+        D --> D2
+        D --> D3
+        D --> D4
+    end
+
+    subgraph "External Services"
+        E[Microsoft Graph API]
+        F[VAPI Platform]
+        G[OpenRouter LLM]
+        H[Property Websites]
+    end
+
+    subgraph "Deployment Pipeline"
+        I[GitHub Actions]
+        J[Docker Hub]
+        K[Render Auto-Deploy]
+        L[Vercel Auto-Deploy]
+    end
+
+    A -->|Voice Commands| F
+    F -->|Webhook POST| D1
+    D1 -->|Function Calls| D2
+
+    B -->|HTTPS| C
+    C -->|API Calls| D2
+
+    D2 -->|OAuth + API Calls| E
+    D4 -->|Scrape| H
+    D4 -->|LLM| G
+
+    I -->|Build & Push| J
+    J -->|Pull Image| K
+    K -->|Deploy| D
+
+    I -->|Build & Deploy| L
+    L -->|Deploy| C
+
+    style A fill:#e1f5ff
+    style B fill:#e1f5ff
+    style C fill:#c3e6cb
+    style D fill:#ffeaa7
+    style F fill:#ff7675
+    style E fill:#74b9ff
 ```
 
-### Current Problematic Flow
-```mermaid
-graph TD
-    A[VAPI Call] --> B[POST /vapi/webhook]
-    B --> C{Extract website from payload}
-    C -->|Can't find website| D[Return generic message]
-    C -->|Website found| E{is_update_needed check}
-    E -->|Data >24hrs old| F[Skip database entirely]
-    F --> G[Live DuckDuckGo search]
-    G --> H[Return search results ≠ database]
+## THE REAL ISSUE
+
+**Root Cause**: Render backend has NOT been deployed with the latest code that includes CORS middleware.
+
+**Why "Failed to fetch"**: The production backend is running an OLD Docker image without:
+- CORS headers allowing Vercel domain
+- `/calendar/events` endpoint
+- Updated error handling
+
+**The Fix**: Manual deployment on Render dashboard
+
+## Deployment Complexity Explained
+
+### GitHub Actions → Docker Hub → Render (Current)
+1. Code pushed to GitHub
+2. GitHub Actions builds Docker image
+3. Image pushed to Docker Hub as `mark0025/peterentalvapi:latest`
+4. **Render MUST manually pull the new image** ⚠️
+
+This is NOT automated because Render is configured to use a pre-built Docker image, not build from source.
+
+### Alternative: Direct GitHub → Render
+- Render could build directly from GitHub
+- Slower deploys (Playwright install takes time)
+- Would be fully automatic
+
+## Should We Migrate to Next.js Only?
+
+### NO - Keep Current Architecture
+
+**Reasons**:
+1. ✅ Python backend works well for:
+   - VAPI webhooks
+   - LangChain rental scraping
+   - Playwright browser automation
+   
+2. ✅ Next.js frontend perfect for:
+   - User interface
+   - Testing tools
+   - OAuth redirect pages
+
+3. ✅ Separation of concerns is GOOD:
+   - Frontend: UI/UX
+   - Backend: Business logic, APIs, data processing
+
+4. ✅ Current issue is just deployment config
+   - Not an architecture problem
+   - Just need to trigger Render deployment
+
+## The Real Problem & Solution
+
+### Problem
+**Render requires manual deployment trigger** when using pre-built Docker images from Docker Hub.
+
+### Solution Options
+
+**Option 1: Manual Deploy (Quick Fix - Do This Now)**
+1. Go to Render dashboard
+2. Click "Manual Deploy" → "Deploy latest commit"
+3. Wait 2-3 minutes
+4. Test again - should work
+
+**Option 2: Automate Render Deployment (Long-term)**
+Add a step to GitHub Actions that triggers Render deployment via API:
+
+```yaml
+- name: Trigger Render Deploy
+  run: |
+    curl -X POST https://api.render.com/deploy/srv-XXXXX?key=YOUR_DEPLOY_KEY
 ```
 
-## 📊 Database Architecture
+**Option 3: Change Render to Build from GitHub (Slower)**
+- Configure Render to build directly from GitHub repo
+- Automatic deploys, but slower (5-7 min vs 2-3 min)
 
-### rental_data.json Structure
-```json
-{
-  "last_updated": "2025-08-25T16:32:36.798625",
-  "rentals": {
-    "nolenpropertiesllc.managebuilding.com_1": {
-      "id": "nolenpropertiesllc.managebuilding.com_1",
-      "website": "nolenpropertiesllc.managebuilding.com",
-      "scraped_at": "2025-08-25T16:32:36.794763",
-      "data": {
-        "address": "1000 Rambling Oaks - 6, Norman, OK 73072",
-        "price": "$975",
-        "bedrooms": 2,
-        "bathrooms": 2,
-        "square_feet": "756 sqft",
-        "available_date": "July 15",
-        "property_type": "condo"
-      }
-    }
-  },
-  "websites": {
-    "nolenpropertiesllc.managebuilding.com": {
-      "url": "https://nolenpropertiesllc.managebuilding.com",
-      "last_scraped": "2025-08-25T16:32:36.797450",
-      "rental_count": 4
-    }
-  }
-}
-```
+## Current Status
 
-### Database Operations
-- **Load**: `rental_db.load_data()`
-- **Query**: `rental_db.get_rentals_for_website(website)`
-- **Check freshness**: `rental_db.is_update_needed()` 
-- **Stats**: `rental_db.get_database_stats()`
+✅ Frontend: Working, deployed, correct env vars
+⚠️ Backend: Docker image built, pushed to Docker Hub, **NOT deployed to Render yet**
+🔧 Action Needed: Manual deploy on Render dashboard
 
-## 🐳 Docker Deployment Architecture
-
-### Dockerfile Analysis
-```dockerfile
-# Base: Microsoft Playwright (Ubuntu Noble + browsers)
-FROM mcr.microsoft.com/playwright:v1.54.0-noble
-
-# Python 3.12 + uv package manager
-RUN apt-get update && apt-get install python3.12 python3.12-venv pipx
-
-# Install uv via pipx (proper way)
-RUN pipx install uv && pipx ensurepath
-
-# Copy dependencies and install via uv
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen
-
-# Copy application code (includes rental_data.json)
-COPY . .
-
-# Non-root user for security
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
-# Start FastAPI server
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### Container Layers
-1. **Base**: Playwright browsers (~2.5GB)
-2. **Python**: 3.12 + development tools (~200MB)
-3. **Dependencies**: uv-managed packages (~100MB)
-4. **App Code**: Python files + JSON database (~1MB)
-
-### Resource Usage
-- **Idle**: 150-200MB RAM, 5-10% CPU
-- **Active**: 400-600MB RAM, 50-80% CPU during scraping
-- **Storage**: 2.8GB total container size
-
-## 📡 API Endpoints
-
-### Primary Endpoints
-- `POST /vapi/webhook` - **Main VAPI integration point**
-- `GET /database/status` - Database health and stats
-- `GET /database/rentals/{website}` - Direct database query
-- `GET /health` - Container health check
-
-### Webhook Payload Handling
-**VAPI sends this structure:**
-```json
-{
-  "body": {
-    "properties": {
-      "website": {
-        "value": "nolenpropertiesllc.managebuilding.com"
-      }
-    }
-  }
-}
-```
-
-**Current parsing logic:**
-```python
-# These checks FAIL with VAPI payload
-website = request.get('website', '')  # Not found
-website = request.get('body', {}).get('website', '')  # Not found
-
-# NEEDED: Extract from nested structure
-website = request.get('body', {}).get('properties', {}).get('website', {}).get('value', '')
-```
-
-## 🔄 Deployment Pipeline
-
-### Local Development
-```bash
-# Install dependencies
-uv sync
-
-# Start with hot reload
-uv run uvicorn main:app --reload
-
-# Test database directly
-uv run python -c "from rental_database import rental_db; print(rental_db.get_database_stats())"
-```
-
-### Docker Build & Push
-```bash
-# Build image locally
-docker build -t mark0025/peterentalvapi:latest .
-
-# Push to Docker Hub
-docker push mark0025/peterentalvapi:latest
-
-# Render auto-deploys from Docker Hub
-```
-
-### Render Deployment
-- **Source**: Docker Hub `mark0025/peterentalvapi:latest`
-- **URL**: https://peterentalvapi-latest.onrender.com
-- **Auto-deploy**: On Docker Hub push
-- **Environment**: `OPENROUTER_API_KEY` from Render dashboard
-
-## 🚨 Current Issues & Root Causes
-
-### Issue 1: Wrong Response Type
-**Expected**: JSON with 4 rental properties from database
-**Actual**: DuckDuckGo search results with 11 generic listings
-
-**Root Cause**: Webhook skips database due to `is_update_needed()` returning True
-
-### Issue 2: Payload Parsing
-**Expected**: Extract website from VAPI payload structure  
-**Actual**: Falls back to generic "what website?" response
-
-**Root Cause**: Missing nested payload parsing for `body.properties.website.value`
-
-### Issue 3: Response Format Mismatch
-**Expected**: Instant database lookup (<1 second)
-**Actual**: Live scraping (5-10 seconds) with different results
-
-**Root Cause**: Logic prioritizes freshness over speed/consistency
-
-## ✅ Local vs Deployed Behavior
-
-### Local Testing (Docker)
-```bash
-# Container has correct code and data
-docker exec container-name ls -la /app/
-# Shows: rental_data.json, main.py, rental_database.py
-
-# Database works correctly
-curl http://localhost:8001/database/status
-# Returns: 4 rentals, last updated 2025-08-25
-
-# Webhook parsing fails but database is accessible
-curl -X POST http://localhost:8001/vapi/webhook -d '{"website":"site.com"}'
-```
-
-### Deployed Testing (Render)
-```bash
-# Same container, same data
-curl https://peterentalvapi-latest.onrender.com/database/status
-# Returns: 4 rentals, last updated 2025-08-25
-
-# Same webhook parsing issue
-curl -X POST https://peterentalvapi-latest.onrender.com/vapi/webhook -d VAPI_PAYLOAD
-# Returns: DuckDuckGo results instead of database
-```
-
-## 🔧 Fix Requirements
-
-### Priority 1: Webhook Payload Parsing
-Update `main.py` line ~167-176 to properly extract website:
-```python
-# ADD: Check VAPI nested structure
-if not website:
-    website = request.get('body', {}).get('properties', {}).get('website', {}).get('value', '')
-```
-
-### Priority 2: Database-First Logic
-Modify `is_update_needed()` check to prefer database over live scraping:
-```python
-# Current: Skip database if >24 hours old
-if not rental_db.is_update_needed():
-    return cached_data
-
-# Better: Use database unless empty or >7 days old
-cached_data = rental_db.get_rentals_for_website(website)
-if cached_data and not extremely_stale():
-    return format_cached_response(cached_data)
-```
-
-### Priority 3: Response Consistency
-Ensure both cached and scraped responses use same JSON structure for VAPI compatibility.
-
-## 📈 Performance Targets
-
-- **Database Response**: <1 second
-- **Cache Hit Rate**: >90% for known websites  
-- **Fallback Scraping**: <10 seconds max
-- **Memory Usage**: <300MB steady state
-- **Error Rate**: <5% for valid websites
-
-## 🔮 MCP Integration Points
-
-Following your rules, future MCP server integration should consider:
-
-- **MCP Database Connector**: Direct queries to rental_data.json
-- **MCP VAPI Bridge**: Protocol translation between MCP and VAPI
-- **MCP Monitoring**: Real-time webhook performance metrics
-- **MCP Content Updates**: Automated database refresh from multiple sources
-
----
-
-## 🎯 Next Steps
-
-1. **Fix webhook payload parsing** for VAPI compatibility
-2. **Prioritize database responses** over live scraping  
-3. **Test end-to-end** with actual VAPI voice calls
-4. **Monitor response times** and cache hit rates
-5. **Plan MCP integration** for expanded functionality
-
-**Goal**: Simple, fast, reliable rental lookup tool that serves cached data instantly to VAPI voice calls.
+After you deploy on Render, everything will work.
