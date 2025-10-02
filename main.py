@@ -475,6 +475,89 @@ async def get_calendar_availability(
             "message": str(e)
         }
 
+@app.get("/calendar/events")
+async def get_calendar_events(
+    user_id: str,
+    days_ahead: int = 14
+):
+    """
+    Get upcoming calendar events for a user
+
+    Example:
+    GET /calendar/events?user_id=mark@peterei.com&days_ahead=14
+    """
+    from src.calendar.microsoft_calendar import MicrosoftCalendar
+    from datetime import datetime, timedelta
+    from loguru import logger
+
+    try:
+        # Get valid token
+        token_data = token_manager.get_token(user_id)
+        if not token_data or token_data.get("is_expired"):
+            return {
+                "status": "error",
+                "message": "Not authorized. Please authorize calendar access first.",
+                "auth_url": f"/calendar/auth/start?user_id={user_id}"
+            }
+
+        # Fetch events using Graph API
+        calendar = MicrosoftCalendar(token_data["access_token"])
+
+        # Calculate time range
+        start_time = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(days=days_ahead)
+
+        # Use calendarView endpoint
+        import httpx
+        events_url = f"{calendar.GRAPH_API_ENDPOINT}/me/calendarView"
+        params = {
+            "startDateTime": start_time.isoformat() + "Z",
+            "endDateTime": end_time.isoformat() + "Z",
+            "$orderby": "start/dateTime",
+            "$top": 50
+        }
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(events_url, headers=calendar.headers, params=params)
+            response.raise_for_status()
+            events_data = response.json()
+
+        # Format events for frontend
+        events = []
+        for event in events_data.get("value", []):
+            events.append({
+                "id": event["id"],
+                "subject": event.get("subject", "No Subject"),
+                "start_time": event["start"]["dateTime"],
+                "end_time": event["end"]["dateTime"],
+                "location": event.get("location", {}).get("displayName", ""),
+                "attendees": [
+                    {
+                        "name": attendee.get("emailAddress", {}).get("name", ""),
+                        "email": attendee.get("emailAddress", {}).get("address", "")
+                    }
+                    for attendee in event.get("attendees", [])
+                ],
+                "is_online_meeting": event.get("isOnlineMeeting", False),
+                "web_link": event.get("webLink")
+            })
+
+        logger.info(f"✅ Retrieved {len(events)} calendar events for {user_id}")
+
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "events": events,
+            "total_events": len(events)
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Get events error: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
 @app.get("/database/status")
 async def database_status():
     """Get rental database status and statistics"""
