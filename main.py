@@ -7,7 +7,7 @@ Simple FastAPI server with DuckDuckGo website search for VAPI
 """
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from pathlib import Path
 import os
 import sys
@@ -327,7 +327,7 @@ async def start_calendar_auth(user_id: str):
 
 @app.get("/calendar/auth/callback")
 async def calendar_auth_callback(code: str, state: str):
-    """Handle OAuth callback"""
+    """Handle OAuth callback - redirects to frontend"""
     try:
         # Extract user_id from state
         user_id = state.split(":")[0] if ":" in state else "default_user"
@@ -335,11 +335,15 @@ async def calendar_auth_callback(code: str, state: str):
         token_data = await oauth_handler.exchange_code_for_token(code)
         token_manager.store_token(user_id, token_data)
 
-        return {"status": "success", "message": "Calendar connected successfully!", "user_id": user_id}
+        # Redirect to frontend Users page with success
+        frontend_url = os.getenv("FRONTEND_URL", "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app")
+        return RedirectResponse(url=f"{frontend_url}/users?auth=success&email={user_id}")
     except Exception as e:
         from loguru import logger
         logger.error(f"OAuth callback error: {e}")
-        return {"status": "error", "message": str(e)}
+        # Redirect to frontend with error
+        frontend_url = os.getenv("FRONTEND_URL", "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app")
+        return RedirectResponse(url=f"{frontend_url}/users?auth=error&message={str(e)}")
 
 @app.get("/calendar/auth/status")
 async def calendar_auth_status(user_id: str):
