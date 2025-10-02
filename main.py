@@ -42,7 +42,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app",
+        "https://peterental-nextjs.vercel.app",  # Production
+        "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app",  # Preview
         "https://*.vercel.app",  # Allow all Vercel preview deployments
         "http://localhost:3000",  # Local development
         "http://localhost:3001",
