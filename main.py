@@ -7,6 +7,7 @@ Simple FastAPI server with DuckDuckGo website search for VAPI
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from pathlib import Path
 import os
@@ -35,6 +36,20 @@ app = FastAPI(
     title="Pete Rental VAPI Server",
     description="Voice AI with DuckDuckGo Website Search + Calendar Booking",
     version="1.0.0"
+)
+
+# CORS middleware - allow frontend to make requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app",
+        "https://*.vercel.app",  # Allow all Vercel preview deployments
+        "http://localhost:3000",  # Local development
+        "http://localhost:3001",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Initialize calendar services
