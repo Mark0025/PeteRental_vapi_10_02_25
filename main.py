@@ -314,14 +314,12 @@ async def health():
 # Calendar OAuth Endpoints
 @app.get("/calendar/auth/start")
 async def start_calendar_auth(user_id: str):
-    """Initiate OAuth flow for calendar access"""
+    """Initiate OAuth flow for calendar access - redirects to Microsoft"""
     try:
         state = f"{user_id}:{secrets.token_urlsafe(16)}"
         auth_url = oauth_handler.get_authorization_url(state)
-        return {
-            "authorization_url": auth_url,
-            "message": "Visit this URL to authorize calendar access"
-        }
+        # Redirect directly to Microsoft OAuth page
+        return RedirectResponse(url=auth_url)
     except Exception as e:
         return {"error": str(e), "configured": False}
 
