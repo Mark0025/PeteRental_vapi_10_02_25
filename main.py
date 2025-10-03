@@ -31,6 +31,7 @@ from src.calendar.microsoft_oauth import MicrosoftOAuth
 from src.calendar.token_manager import TokenManager
 from src.vapi.functions.calendar_functions import calendar_functions
 import secrets
+import httpx
 
 app = FastAPI(
     title="Pete Rental VAPI Server",
@@ -662,6 +663,61 @@ async def get_available_rentals():
     }
 
 # Simple VAPI webhook endpoint
+@app.get("/vapi/assistants")
+async def get_vapi_assistants():
+    """
+    Fetch all VAPI assistants from the VAPI API
+    Returns list of assistants with their configurations
+    """
+    from loguru import logger
+
+    try:
+        vapi_api_key = os.getenv("VAPI_API_KEY", "c3a078c1-9884-4ef5-b82a-8e20f7d23a96")
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.vapi.ai/assistant",
+                headers={"Authorization": f"Bearer {vapi_api_key}"}
+            )
+
+            if response.status_code == 200:
+                assistants = response.json()
+                logger.info(f"✅ Fetched {len(assistants)} assistants from VAPI")
+
+                # Format for frontend consumption
+                formatted_assistants = []
+                for assistant in assistants:
+                    formatted_assistants.append({
+                        "id": assistant.get("id"),
+                        "name": assistant.get("name"),
+                        "model": assistant.get("model", {}).get("model"),
+                        "voice": assistant.get("voice", {}).get("voiceId"),
+                        "firstMessage": assistant.get("firstMessage"),
+                        "tools": assistant.get("model", {}).get("tools", []),
+                        "createdAt": assistant.get("createdAt"),
+                        "updatedAt": assistant.get("updatedAt")
+                    })
+
+                return {
+                    "status": "success",
+                    "assistants": formatted_assistants,
+                    "count": len(formatted_assistants)
+                }
+            else:
+                logger.error(f"❌ Failed to fetch assistants: {response.status_code}")
+                return {
+                    "status": "error",
+                    "message": f"VAPI API returned {response.status_code}",
+                    "assistants": []
+                }
+    except Exception as e:
+        logger.error(f"❌ Error fetching assistants: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "assistants": []
+        }
+
 @app.post("/vapi/webhook")
 async def vapi_webhook(request: dict):
     """
@@ -669,9 +725,14 @@ async def vapi_webhook(request: dict):
     """
     try:
         from loguru import logger
-        
-        # DEBUG: Log the full request to see what VAPI actually sends
-        logger.info(f"🔍 FULL VAPI REQUEST: {request}")
+        import json
+
+        # VERBOSE LOGGING: Log the full request to see what VAPI actually sends
+        logger.info("="*80)
+        logger.info("🔍 VAPI WEBHOOK REQUEST RECEIVED")
+        logger.info("="*80)
+        logger.info(f"📦 Full Request JSON:\n{json.dumps(request, indent=2)}")
+        logger.info("="*80)
         
         # Extract website directly from request body (VAPI sends it directly)
         website = request.get('website', '')
@@ -709,12 +770,24 @@ async def vapi_webhook(request: dict):
             parameters = function_call.get('parameters', {})
 
         if function_name == 'get_availability':
-            logger.info(f"📅 Handling get_availability function with params: {parameters}")
-            return await calendar_functions.handle_get_availability(parameters)
+            logger.info("="*80)
+            logger.info("📅 CALENDAR FUNCTION: get_availability")
+            logger.info(f"📋 Parameters: {json.dumps(parameters, indent=2)}")
+            logger.info(f"🔑 User accessing Microsoft Calendar")
+            logger.info("="*80)
+            result = await calendar_functions.handle_get_availability(parameters)
+            logger.info(f"✅ get_availability result:\n{json.dumps(result, indent=2)}")
+            return result
 
         elif function_name == 'set_appointment':
-            logger.info(f"📅 Handling set_appointment function with params: {parameters}")
-            return await calendar_functions.handle_set_appointment(parameters)
+            logger.info("="*80)
+            logger.info("📅 CALENDAR FUNCTION: set_appointment")
+            logger.info(f"📋 Parameters: {json.dumps(parameters, indent=2)}")
+            logger.info(f"🔑 User creating appointment in Microsoft Calendar")
+            logger.info("="*80)
+            result = await calendar_functions.handle_set_appointment(parameters)
+            logger.info(f"✅ set_appointment result:\n{json.dumps(result, indent=2)}")
+            return result
 
         # Handle website search
         if website:
