@@ -63,7 +63,7 @@ class CalendarFunctions:
             # Get valid token
             token_data, error = await self._ensure_valid_token(user_id)
             if error:
-                return {"response": error, "action": "auth_required", "result": {"response": error, "action": "auth_required"}}
+                return {"result": error}
 
             # Use Microsoft Calendar with valid token
             calendar = MicrosoftCalendar(token_data["access_token"])
@@ -71,10 +71,7 @@ class CalendarFunctions:
 
             if not available_slots:
                 return {
-                    "result": {
-                        "response": f"Unfortunately, there are no available viewing times in the next week for {property_address}. Would you like to leave your contact information?",
-                        "action": "no_availability"
-                    }
+                    "result": f"Unfortunately, there are no available viewing times in the next week for {property_address}. Would you like to leave your contact information?"
                 }
 
             # Format for voice (natural response)
@@ -88,24 +85,15 @@ class CalendarFunctions:
 
             logger.info(f"✅ Returned {len(available_slots)} slots for {user_id}")
 
+            # VAPI Server Function expects ONLY "result" key with string response
             return {
-                "response": response,
-                "available_slots": available_slots,
-                "action": "present_slots",
-                "result": {
-                    "response": response,
-                    "available_slots": available_slots,
-                    "action": "present_slots"
-                }
+                "result": response
             }
 
         except Exception as e:
             logger.error(f"❌ get_availability error: {e}")
             return {
-                "result": {
-                    "response": "I'm having trouble checking availability right now. Can I help you with something else?",
-                    "action": "error"
-                }
+                "result": "I'm having trouble checking availability right now. Can I help you with something else?"
             }
 
     async def handle_set_appointment(self, parameters: Dict[str, Any]) -> Dict:
@@ -125,7 +113,7 @@ class CalendarFunctions:
             # Get valid token
             token_data, error = await self._ensure_valid_token(user_id)
             if error:
-                return {"response": error, "action": "auth_required", "result": {"response": error, "action": "auth_required"}}
+                return {"result": error}
 
             # Parse start time
             start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
@@ -149,20 +137,13 @@ class CalendarFunctions:
             logger.info(f"✅ Booked appointment {appointment['event_id']} for {user_id}")
 
             return {
-                "result": {
-                    "response": response,
-                    "appointment": appointment,
-                    "action": "booked"
-                }
+                "result": response
             }
 
         except Exception as e:
             logger.error(f"❌ set_appointment error: {e}")
             return {
-                "result": {
-                    "response": "I couldn't complete the booking right now. Would you like me to take your information and have someone call you back?",
-                    "action": "error"
-                }
+                "result": "I couldn't complete the booking right now. Would you like me to take your information and have someone call you back?"
             }
 
 
