@@ -91,7 +91,9 @@ class CalendarFunctions:
             }
 
         except Exception as e:
+            import traceback
             logger.error(f"❌ get_availability error: {e}")
+            logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
             return {
                 "result": "I'm having trouble checking availability right now. Can I help you with something else?"
             }
@@ -141,7 +143,9 @@ class CalendarFunctions:
             }
 
         except Exception as e:
+            import traceback
             logger.error(f"❌ set_appointment error: {e}")
+            logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
             return {
                 "result": "I couldn't complete the booking right now. Would you like me to take your information and have someone call you back?"
             }
