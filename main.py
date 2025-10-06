@@ -270,41 +270,17 @@ async def calendar_setup_page():
                 }
             }
 
-            async function startAuth() {
+            function startAuth() {
                 const userId = document.getElementById('userId').value;
-                const authBtn = document.getElementById('authBtn');
 
                 if (!userId) {
                     showStatus('error', 'Please enter a User ID');
                     return;
                 }
 
-                authBtn.innerHTML = 'Getting authorization URL... <div class="loader"></div>';
-                authBtn.disabled = true;
-
-                try {
-                    const response = await fetch(`/calendar/auth/start?user_id=${encodeURIComponent(userId)}`);
-                    const data = await response.json();
-
-                    if (data.authorization_url) {
-                        showStatus('success', '🔗 Opening Microsoft login... Complete the authorization and return here.');
-
-                        // Open auth URL in new window
-                        window.open(data.authorization_url, '_blank');
-
-                        // Wait and check status
-                        setTimeout(() => {
-                            showStatus('info', '⏳ Complete the login in the popup window, then check your status.');
-                        }, 2000);
-                    } else {
-                        showStatus('error', `❌ Error: ${data.error || 'Failed to get authorization URL'}`);
-                    }
-                } catch (error) {
-                    showStatus('error', `❌ Error: ${error.message}`);
-                } finally {
-                    authBtn.innerHTML = '🔐 Connect Microsoft Calendar';
-                    authBtn.disabled = false;
-                }
+                // Direct navigation to auth endpoint (no fetch, avoid CORS redirect issues)
+                showStatus('success', '🔗 Redirecting to Microsoft login...');
+                window.location.href = `/calendar/auth/start?user_id=${encodeURIComponent(userId)}`;
             }
 
             function showStatus(type, message) {
