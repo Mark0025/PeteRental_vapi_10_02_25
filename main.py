@@ -47,10 +47,13 @@ app.add_middleware(
         "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app",  # Preview
         "https://*.vercel.app",  # Allow all Vercel preview deployments
         "https://peterentalvapi-latest.onrender.com",  # Render production
+        "https://vapi.ai",  # VAPI dashboard
+        "https://*.vapi.ai",  # VAPI webhook servers
         "http://localhost:3000",  # Local development
         "http://localhost:3001",
         "http://localhost:8000",
         "http://localhost:8001",
+        "*",  # Allow all origins (VAPI webhooks come from various IPs)
     ],
     allow_credentials=True,
     allow_methods=["*"],
