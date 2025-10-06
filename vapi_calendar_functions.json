@@ -32,7 +32,7 @@
         },
         {
           "type": "request-complete",
-          "content": "{{output.result.response}}"
+          "content": "{{output.result}}"
         },
         {
           "type": "request-failed",
@@ -84,7 +84,7 @@
         },
         {
           "type": "request-complete",
-          "content": "{{output.result.response}}"
+          "content": "{{output.result}}"
         },
         {
           "type": "request-failed",
