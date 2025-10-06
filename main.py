@@ -761,10 +761,12 @@ async def vapi_webhook(request: dict):
 
         # Check for calendar function calls - support multiple VAPI payload formats
         # New format: message.toolCalls (array)
+        tool_call_id = None
         tool_calls = request.get('message', {}).get('toolCalls', [])
         if tool_calls and len(tool_calls) > 0:
             # Handle first tool call
             tool_call = tool_calls[0]
+            tool_call_id = tool_call.get('id')  # Extract toolCallId
             function_call = tool_call.get('function', {})
             function_name = function_call.get('name')
             parameters = function_call.get('arguments', {})
@@ -776,26 +778,43 @@ async def vapi_webhook(request: dict):
             )
             function_name = function_call.get('name') if function_call else None
             parameters = function_call.get('parameters', {})
+            tool_call_id = function_call.get('id') if function_call else None
 
         if function_name == 'get_availability':
             logger.info("="*80)
             logger.info("📅 CALENDAR FUNCTION: get_availability")
             logger.info(f"📋 Parameters: {json.dumps(parameters, indent=2)}")
             logger.info(f"🔑 User accessing Microsoft Calendar")
+            logger.info(f"🆔 Tool Call ID: {tool_call_id}")
             logger.info("="*80)
             result = await calendar_functions.handle_get_availability(parameters)
             logger.info(f"✅ get_availability result:\n{json.dumps(result, indent=2)}")
-            return result
+
+            # Return VAPI-compliant format with toolCallId
+            return {
+                "results": [{
+                    "toolCallId": tool_call_id,
+                    "result": result.get("result", "")
+                }]
+            }
 
         elif function_name == 'set_appointment':
             logger.info("="*80)
             logger.info("📅 CALENDAR FUNCTION: set_appointment")
             logger.info(f"📋 Parameters: {json.dumps(parameters, indent=2)}")
             logger.info(f"🔑 User creating appointment in Microsoft Calendar")
+            logger.info(f"🆔 Tool Call ID: {tool_call_id}")
             logger.info("="*80)
             result = await calendar_functions.handle_set_appointment(parameters)
             logger.info(f"✅ set_appointment result:\n{json.dumps(result, indent=2)}")
-            return result
+
+            # Return VAPI-compliant format with toolCallId
+            return {
+                "results": [{
+                    "toolCallId": tool_call_id,
+                    "result": result.get("result", "")
+                }]
+            }
 
         # Handle website search
         if website:
