@@ -91,7 +91,12 @@ jobs:
         run: |
           echo "🚀 Docker image deployed to Docker Hub"
           echo "📦 Image: ${{ env.DOCKER_IMAGE }}:latest"
-          echo "🔗 Render will auto-deploy in 2-3 minutes"
+          echo "🔗 Triggering Render deployment..."
+
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST "https://api.render.com/deploy/srv-d2nog1be5dus7399h2n0?key=zLKxse_ekY4"
+          echo "✅ Render deploy triggered"
 
   notify:
     name: Notify Results
