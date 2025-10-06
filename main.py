@@ -307,6 +307,20 @@ async def health():
         "service": "peterental-vapi"
     }
 
+@app.get("/debug/last-vapi-request")
+async def get_last_vapi_request():
+    """Debug endpoint to see what VAPI last sent"""
+    import json
+    import os
+    try:
+        if os.path.exists("/tmp/last_vapi_request.json"):
+            with open("/tmp/last_vapi_request.json", "r") as f:
+                return json.load(f)
+        else:
+            return {"error": "No request captured yet. Make a VAPI call first."}
+    except Exception as e:
+        return {"error": str(e)}
+
 # Calendar OAuth Endpoints
 @app.get("/calendar/auth/start")
 async def start_calendar_auth(user_id: str):
@@ -705,13 +719,25 @@ async def vapi_webhook(request: dict):
     try:
         from loguru import logger
         import json
+        from datetime import datetime
 
         # VERBOSE LOGGING: Log the full request to see what VAPI actually sends
+        timestamp = datetime.now().isoformat()
         logger.info("="*80)
-        logger.info("🔍 VAPI WEBHOOK REQUEST RECEIVED")
+        logger.info(f"🔍 VAPI WEBHOOK REQUEST RECEIVED at {timestamp}")
         logger.info("="*80)
         logger.info(f"📦 Full Request JSON:\n{json.dumps(request, indent=2)}")
         logger.info("="*80)
+
+        # Also save to a file we can retrieve via HTTP
+        try:
+            with open("/tmp/last_vapi_request.json", "w") as f:
+                json.dump({
+                    "timestamp": timestamp,
+                    "request": request
+                }, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save request to file: {e}")
         
         # Extract website directly from request body (VAPI sends it directly)
         website = request.get('website', '')
