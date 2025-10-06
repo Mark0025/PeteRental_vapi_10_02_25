@@ -46,8 +46,11 @@ app.add_middleware(
         "https://peterental-nextjs.vercel.app",  # Production
         "https://peterental-nextjs-octs8yxcr-mark-carpenters-projects.vercel.app",  # Preview
         "https://*.vercel.app",  # Allow all Vercel preview deployments
+        "https://peterentalvapi-latest.onrender.com",  # Render production
         "http://localhost:3000",  # Local development
         "http://localhost:3001",
+        "http://localhost:8000",
+        "http://localhost:8001",
     ],
     allow_credentials=True,
     allow_methods=["*"],
