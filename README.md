@@ -127,6 +127,7 @@ All technical documentation is organized in the `DEV_MAN/` directory:
 - [DEPLOYMENT_PIPELINE.md](DEV_MAN/deployment/DEPLOYMENT_PIPELINE.md) - CI/CD pipeline
 
 ### **Guides** ([DEV_MAN/guides/](DEV_MAN/guides/))
+- [USING_AGENT_SYSTEM.md](DEV_MAN/guides/USING_AGENT_SYSTEM.md) - **Multi-agent system quick reference**
 - [DATABASE_MIGRATIONS.md](DEV_MAN/guides/DATABASE_MIGRATIONS.md) - Database migration system
 - [VAPI_SETUP.md](DEV_MAN/guides/VAPI_SETUP.md) - VAPI configuration
 - [FINISH_SETUP.md](DEV_MAN/guides/FINISH_SETUP.md) - Setup completion
