@@ -76,11 +76,13 @@ playwright/.cache/
 htmlcov/
 .pytest_cache/
 
-# Environment variables
+# Environment variables - CRITICAL SECURITY
+# These files contain API keys and must NEVER be committed
 .env.local
 .env.development
 .env.test
 .env.production
+.env.*.local
 
 # Rental data (keep this for now, but you might want to exclude it)
 # rental_data.json
