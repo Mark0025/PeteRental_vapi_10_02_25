@@ -1,6 +1,9 @@
 # Using the Agent System
 
-**Quick reference for working with the multi-agent architecture**
+**Quick reference for working with the multi-agent and multi-user architecture**
+
+> **⚠️ IMPORTANT:** This guide now includes multi-user support!
+> See **Multi-User System** section below for user management.
 
 ## 📋 Overview
 

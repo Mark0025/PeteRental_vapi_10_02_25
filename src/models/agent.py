@@ -61,6 +61,7 @@ class AgentUpdate(BaseModel):
 
     agent_name: Optional[str] = Field(None, min_length=1, max_length=255)
     calendar_user_id: Optional[str] = Field(None, max_length=255)
+    user_id: Optional[int] = Field(None, description="User who owns this agent")
     is_active: Optional[bool] = None
 
     model_config = ConfigDict(extra="forbid")  # Prevent unknown fields
