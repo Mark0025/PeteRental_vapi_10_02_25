@@ -64,6 +64,32 @@ app.add_middleware(
 oauth_handler = MicrosoftOAuth()
 token_manager = TokenManager()
 
+@app.on_event("startup")
+async def startup_migrations():
+    """Run database migrations on application startup"""
+    from loguru import logger
+
+    # Only run migrations if DATABASE_URL is set
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        logger.info("⏭️  Skipping migrations (DATABASE_URL not set - using JSON storage)")
+        return
+
+    try:
+        from src.database import run_migrations
+        logger.info("🚀 Running database migrations...")
+        count = await run_migrations()
+
+        if count > 0:
+            logger.info(f"✅ Applied {count} new migrations")
+        else:
+            logger.info("✅ Database up to date (no new migrations)")
+    except Exception as e:
+        logger.error(f"❌ Migration failed: {e}")
+        # Don't crash the app - migrations might fail locally
+        # but we still want the app to start for development
+
 @app.get("/")
 async def root():
     """Root endpoint"""

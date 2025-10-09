@@ -37,6 +37,7 @@ dependencies = [
     "pygments>=2.19.2",
     "python-frontmatter>=1.1.0",
     "vapi-server-sdk>=1.7.2",
+    "asyncpg>=0.30.0",
 ]
 
 [tool.uv]
